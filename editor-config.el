@@ -52,78 +52,68 @@
 
 (global-set-key (kbd "C-/") 'my-comment-or-uncomment-region-or-line)
 
+(defun my-region-active-p ()
+	"Return t if the region is active and not empty."
+	(and (region-active-p) (> (region-end) (region-beginning))))
 
 ;; BackTab
-
-(defun my-remove-first-tab-or-spaces (line)
-"Remove the first tab character from the line."
-(if (string-prefix-p "\t" line)
-(substring line 1)
-line))
-;; (defun my-remove-first-tab-or-spaces (line)
-;; "Remove the first tab character or the appropriate number of spaces from the line."
-;; (let ((tab-width (or tab-width 4)))  ;; Use the default tab width if not set
-;; (cond
-;; ;; If the line starts with a tab, remove it
-;; ((string-prefix-p "\t" line)
-;; (substring line 1))
-;; ;; If the line starts with spaces and there are more or equal to tab-width, remove tab-width spaces
-;; ((and (string-prefix-p (make-string tab-width ?\s) line)
-;; (>= (length line) tab-width))
-;; (substring line tab-width))
-;; ;; If the line starts with fewer than tab-width spaces, remove all leading spaces
-;; ((string-match "^\\s-+" line)
-;; (replace-regexp-in-string "^\\s-+" "" line))
-;; ;; Otherwise, return the line unchanged
-;; (t line))))
-
-(defun my-indent-rigidly-left (start end)
-"Indent the region to the left by removing the first tab character from each line."
+(defun my-indent-rigidly-left (&optional start end)
+"Indent the region to the left by removing the first tab character or spaces from each line."
 (interactive "r")
+(let* ((start (if (my-region-active-p) (region-beginning) (line-beginning-position)))
+	   (end (if (my-region-active-p) (region-end) (line-end-position)))
+	   (start-marker (copy-marker start t))
+(end-marker (copy-marker end t)))
 (save-excursion
-(let ((deactivate-mark nil))  ;; Keep the region active
 (goto-char start)
-(while (< (point) end)
-(let ((line-start (line-beginning-position))
-(line-end (line-end-position)))
-(when (and (>= end line-start) (<= start line-end))
-(let ((line (buffer-substring line-start line-end)))
-(delete-region line-start line-end)
-(insert (my-remove-first-tab-or-spaces line))))
-(forward-line 1)))
-(when (and (not (use-region-p)) (bolp))
-(let ((line-start (line-beginning-position))
-(line-end (line-end-position)))
-(let ((line (buffer-substring line-start line-end)))
-(delete-region line-start line-end)
-(insert (my-remove-first-tab-or-spaces line))))))))
+(while (< (point) (marker-position end-marker))
+  (let ((line-start (line-beginning-position))
+		(line-end (line-end-position))
+		(counter tab-width))
+  	   (if (string-prefix-p "\t" (buffer-substring-no-properties line-start line-end))
+	  		(progn
+				(goto-char (line-beginning-position))
+	    		(delete-char 1))
+  		 (progn
+		   		(while (and (> counter 0) (string-prefix-p " " (buffer-substring-no-properties line-start line-end)))
+			 		(progn
+			   			(goto-char (line-beginning-position))
+	    				(delete-char 1)
+						(setq counter (1- counter)))))))
+  (forward-line 1)
+  ;; Update the end marker position
+(set-marker end-marker (marker-position end-marker))))
+(goto-char start-marker)
+(set-mark (marker-position end-marker))
+(setq deactivate-mark nil)
+;; Clean up markers
+(set-marker start-marker nil)
+(set-marker end-marker nil)))
 
 (global-set-key (kbd "<backtab>") 'my-indent-rigidly-left)
-
-(defun my-add-tab-or-spaces (line)
-"Add a tab character at the beginning of the line."
-(concat "\t" line))
 
 (defun my-indent-rigidly-right (start end)
 "Indent the region to the right by adding a tab character to each line."
 (interactive "r")
+(if (my-region-active-p)
+(let ((start-marker (copy-marker start t))
+	  (end-marker (copy-marker end t)))
 (save-excursion
-(let ((deactivate-mark nil))  ;; Keep the region active
-(if (use-region-p)
-(progn
 (goto-char start)
-(while (< (point) end)
-(let ((line-start (line-beginning-position))
-(line-end (line-end-position)))
-(when (and (>= end line-start) (<= start line-end))
-(let ((line (buffer-substring line-start line-end)))
-(delete-region line-start line-end)
-(insert (my-add-tab-or-spaces line))))
-(forward-line 1))))
-;; Handle the case where no region is selected
-(progn
-(insert "\t")
-(forward-char 1))))))
+(while (< (point) (marker-position end-marker))
+	(goto-char (line-beginning-position))
+	(unless (looking-at-p "^[[:space:]]*$")
+	   	(insert "\t"))
+	(forward-line 1)
+	;; Update the end marker position
+	(set-marker end-marker (marker-position end-marker))))
+(goto-char start-marker)
+(set-mark (marker-position end-marker))
+(setq deactivate-mark nil)
+;; Clean up markers
+(set-marker start-marker nil)
+(set-marker end-marker nil))
+(insert "\t")))
 
 (global-set-key (kbd "TAB") 'my-indent-rigidly-right)  ;; Bind Tab to the function
 
