@@ -2,6 +2,7 @@
 
 (setq shift-select-mode t)  ;; Enable shift selection
 (transient-mark-mode 1)
+(delete-selection-mode 1)
 
 (setq scroll-step 1)  ;; scroll one line at a time					
 (setq scroll-conservatively 10000)  ;; do not put cursor at the center when scrolling	
@@ -179,8 +180,18 @@
 		(set-marker start nil)
 		(set-marker end nil)))
 
-
-
 (global-set-key (kbd "M-<up>") 'move-line-up)
 (global-set-key (kbd "M-<down>") 'move-line-down)
 
+;; Search selected text
+(defun isearch-forward-selected ()
+"Search for the selected text using isearch."
+(interactive)
+(if (use-region-p)
+(let ((selection (buffer-substring-no-properties (region-beginning) (region-end))))
+(deactivate-mark)
+(isearch-mode t)
+(isearch-yank-string selection))
+(call-interactively 'isearch-forward)))
+
+(global-set-key (kbd "C-f") 'isearch-forward-selected)
