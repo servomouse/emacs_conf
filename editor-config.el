@@ -195,3 +195,40 @@
 (call-interactively 'isearch-forward)))
 
 (global-set-key (kbd "C-f") 'isearch-forward-selected)
+
+;; Custom highlighting:
+(defface my-highlight-yellow
+'((t (:background "#FFFF00")))
+"Face for highlighting with yellow background.")
+
+(defface my-highlight-green
+'((t (:background "#00FF00")))
+"Face for highlighting with green background.")
+
+(defface my-highlight-cyan
+'((t (:background "#00FFFF")))
+"Face for highlighting with cyan background.")
+
+(defface my-highlight-magenta
+'((t (:background "#FF00FF")))
+"Face for highlighting with magenta background.")
+
+(defface my-highlight-red
+'((t (:background "#FF0000")))
+"Face for highlighting with red background.")
+
+(defvar my-highlight-colors
+'(my-highlight-yellow my-highlight-green my-highlight-cyan my-highlight-magenta my-highlight-red)
+"List of faces to use for highlighting.")
+
+(defun my-highlight-text (color-index)
+"Highlight all occurrences of the selected text in the buffer with a specified color.
+COLOR-INDEX is the index of the color in `my-highlight-colors`."
+(interactive "nEnter color index (1-5, 0 to unhighlight): ")
+(if (and (use-region-p) (> color-index 0))
+(let ((selection (regexp-quote (buffer-substring-no-properties (region-beginning) (region-end))))
+(face (nth (1- color-index) my-highlight-colors)))
+(highlight-regexp selection face))
+(unhighlight-regexp t)))
+
+(global-set-key (kbd "C-c h") 'my-highlight-text)
