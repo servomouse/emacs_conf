@@ -17,10 +17,7 @@
 
 ;; Fix TAB behavior
 (setq-default indent-tabs-mode t)
-(global-set-key (kbd "TAB") 'self-insert-command)
 
-;; Bind the custom function to M-w
-(global-set-key (kbd "M-w") 'my-copy-and-keep-selection)
 
 ;; Enable global line numbers
 (global-display-line-numbers-mode t)
@@ -28,17 +25,31 @@
 ;; Enable line numbers only in programming modes
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
 
-(defun duplicate-line()	;; Duplicate current line
-  "Duplicate the current line."
-  (interactive)
-  (move-beginning-of-line 1)
-  (kill-line)
-  (yank)
-  (open-line 1)
-  (next-line 1)
-  (yank))
+(defun duplicate-line()
+	"Duplicate the selected region or the current line if no region is selected."
+	(interactive)
+	;; (save-excursion
+		(if (use-region-p)
+			(let* ((reg-start (mark))
+				   (reg-end (point))
+				   (start (save-excursion (goto-char (region-beginning)) (line-beginning-position)))
+				   (end (save-excursion (goto-char (region-end)) (line-end-position)))
+				   (reg-length (1+ (- end start))))
+				(copy-region-as-kill start end)
+				(goto-char start)
+				(yank)
+				(newline)
+				(goto-char (+ reg-start reg-length))
+				(set-mark (point))
+				(goto-char (+ reg-end reg-length))
+				(setq deactivate-mark nil))
+			(let ((line-start (line-beginning-position))
+				  (line-end (line-end-position)))
+				(copy-region-as-kill line-start line-end)
+				(goto-char line-start)
+				(yank)
+				(newline))))
 
-(global-set-key (kbd "C-d") 'duplicate-line)
 
 (defun my-comment-or-uncomment-region-or-line ()
 	"Comment or uncomment the current line or region, keeping the cursor in place."
@@ -51,7 +62,6 @@
 	(save-excursion
 	(comment-or-uncomment-region start end))))
 
-(global-set-key (kbd "C-/") 'my-comment-or-uncomment-region-or-line)
 
 (defun my-region-active-p ()
 	"Return t if the region is active and not empty."
@@ -59,40 +69,40 @@
 
 ;; BackTab
 (defun my-indent-rigidly-left (&optional start end)
-"Indent the region to the left by removing the first tab character or spaces from each line."
-(interactive "r")
-(let* ((start (if (my-region-active-p) (region-beginning) (line-beginning-position)))
-	   (end (if (my-region-active-p) (region-end) (line-end-position)))
-	   (start-marker (copy-marker start t))
-(end-marker (copy-marker end t)))
-(save-excursion
-(goto-char start)
-(while (< (point) (marker-position end-marker))
-  (let ((line-start (line-beginning-position))
-		(line-end (line-end-position))
-		(counter tab-width))
-  	   (if (string-prefix-p "\t" (buffer-substring-no-properties line-start line-end))
-	  		(progn
-				(goto-char (line-beginning-position))
-	    		(delete-char 1))
-  		 (progn
-		   		(while (and (> counter 0) (string-prefix-p " " (buffer-substring-no-properties line-start line-end)))
-			 		(progn
-			   			(goto-char (line-beginning-position))
-	    				(delete-char 1)
-						(setq counter (1- counter)))))))
-  (forward-line 1)
-  ;; Update the end marker position
-(set-marker end-marker (marker-position end-marker))))
-(goto-char start-marker)
-(set-mark (marker-position end-marker))
-(setq deactivate-mark nil)
-;; Clean up markers
-(set-marker start-marker nil)
-(set-marker end-marker nil)))
+	"Indent the region to the left by removing the first tab character or spaces from each line."
+	(interactive "r")
+	(let* ((start (if (my-region-active-p) (region-beginning) (line-beginning-position)))
+		   (end (if (my-region-active-p) (region-end) (line-end-position)))
+		   (start-marker (copy-marker start t))
+		   (end-marker (copy-marker end t)))
+	(save-excursion
+	(goto-char start)
+	(while (< (point) (marker-position end-marker))
+  		(let ((line-start (line-beginning-position))
+			  (line-end (line-end-position))
+			  (counter tab-width))
+  	   		(if (string-prefix-p "\t" (buffer-substring-no-properties line-start line-end))
+	  			(progn
+					(goto-char (line-beginning-position))
+	    			(delete-char 1))
+  		 		(progn
+		   			(while (and (> counter 0) (string-prefix-p " " (buffer-substring-no-properties line-start line-end)))
+			 			(progn
+			   				(goto-char (line-beginning-position))
+	    					(delete-char 1)
+							(setq counter (1- counter)))))))
+  		(forward-line 1)
+  		;; Update the end marker position
+		(set-marker end-marker (marker-position end-marker))))
+	(goto-char start-marker)
+	(set-mark (marker-position end-marker))
+	(setq deactivate-mark nil)
+	;; Clean up markers
+	(set-marker start-marker nil)
+	(set-marker end-marker nil)))
 
-(global-set-key (kbd "<backtab>") 'my-indent-rigidly-left)
 
+;; Forward tab
 (defun my-indent-rigidly-right (start end)
 "Indent the region to the right by adding a tab character to each line."
 (interactive "r")
@@ -116,7 +126,6 @@
 (set-marker end-marker nil))
 (insert "\t")))
 
-(global-set-key (kbd "TAB") 'my-indent-rigidly-right)  ;; Bind Tab to the function
 
 ;; Move line/selection up/down:
 
@@ -180,8 +189,6 @@
 		(set-marker start nil)
 		(set-marker end nil)))
 
-(global-set-key (kbd "M-<up>") 'move-line-up)
-(global-set-key (kbd "M-<down>") 'move-line-down)
 
 ;; Search selected text
 (defun isearch-forward-selected ()
@@ -194,7 +201,6 @@
 (isearch-yank-string selection))
 (call-interactively 'isearch-forward)))
 
-(global-set-key (kbd "C-f") 'isearch-forward-selected)
 
 ;; Custom highlighting:
 (defface my-highlight-yellow
@@ -231,4 +237,36 @@ COLOR-INDEX is the index of the color in `my-highlight-colors`."
 (highlight-regexp selection face))
 (unhighlight-regexp t)))
 
-(global-set-key (kbd "C-c h") 'my-highlight-text)
+
+
+;; My custom minor mode
+(define-minor-mode my-custom-keys-mode
+	"A minor mode for my custom key bindings."
+	:init-value t
+	:lighter " MyKeys"
+	:keymap (let ((map (make-sparse-keymap)))
+	;; (define-key map (kbd "C-d") 'your-custom-function)
+	;; Set key bindings here
+	;; (global-set-key (kbd "TAB") 'self-insert-command)
+	;; (global-set-key (kbd "M-w") 'my-copy-and-keep-selection)
+	;; (global-set-key (kbd "C-d") 'duplicate-line)
+	;; (global-set-key (kbd "C-/") 'my-comment-or-uncomment-region-or-line)
+	;; (global-set-key (kbd "<backtab>") 'my-indent-rigidly-left)
+	;; (global-set-key (kbd "TAB") 'my-indent-rigidly-right)  ;; Bind Tab to the function
+	;; (global-set-key (kbd "M-<up>") 'move-line-up)
+	;; (global-set-key (kbd "M-<down>") 'move-line-down)
+	;; (global-set-key (kbd "C-f") 'isearch-forward-selected)
+	;; (global-set-key (kbd "C-c h") 'my-highlight-text)
+	(define-key map (kbd "TAB") 'self-insert-command)
+	(define-key map (kbd "M-w") 'my-copy-and-keep-selection)
+	(define-key map (kbd "C-d") 'duplicate-line)
+	(define-key map (kbd "C-/") 'my-comment-or-uncomment-region-or-line)
+	(define-key map (kbd "<backtab>") 'my-indent-rigidly-left)
+	(define-key map (kbd "TAB") 'my-indent-rigidly-right)  ;; Bind Tab to the function
+	(define-key map (kbd "M-<up>") 'move-line-up)
+	(define-key map (kbd "M-<down>") 'move-line-down)
+	(define-key map (kbd "C-f") 'isearch-forward-selected)
+	(define-key map (kbd "C-c h") 'my-highlight-text)
+map))
+
+(my-custom-keys-mode 1)  ;; Enable the mode globally

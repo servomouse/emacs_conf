@@ -4,7 +4,7 @@
 (setq inhibit-startup-message t)
 
 (setq debug-on-error t)  ;; Enable verbose error messages
-
+(global-unset-key (kbd "C-x m"))	;; Disable emails
 (let ((config-dir (file-name-directory (or load-file-name buffer-file-name))))
   (load-file (expand-file-name "eshell-config.el" config-dir))  ;; Load eshell config
   (load-file (expand-file-name "editor-config.el" config-dir))  ;; Load editor config
