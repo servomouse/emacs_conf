@@ -28,39 +28,38 @@
 (defun duplicate-line()
 	"Duplicate the selected region or the current line if no region is selected."
 	(interactive)
-	;; (save-excursion
-		(if (use-region-p)
-			(let* ((reg-start (mark))
-				   (reg-end (point))
-				   (start (save-excursion (goto-char (region-beginning)) (line-beginning-position)))
-				   (end (save-excursion (goto-char (region-end)) (line-end-position)))
-				   (reg-length (1+ (- end start))))
-				(copy-region-as-kill start end)
-				(goto-char start)
-				(yank)
-				(newline)
-				(goto-char (+ reg-start reg-length))
-				(set-mark (point))
-				(goto-char (+ reg-end reg-length))
-				(setq deactivate-mark nil))
-			(let ((line-start (line-beginning-position))
-				  (line-end (line-end-position)))
-				(copy-region-as-kill line-start line-end)
-				(goto-char line-start)
-				(yank)
-				(newline))))
+	(if (use-region-p)
+		(let* ((reg-start (mark))
+			   (reg-end (point))
+			   (start (save-excursion (goto-char (region-beginning)) (line-beginning-position)))
+			   (end (save-excursion (goto-char (region-end)) (line-end-position)))
+			   (reg-length (1+ (- end start))))
+			(copy-region-as-kill start end)
+			(goto-char start)
+			(yank)
+			(newline)
+			(goto-char (+ reg-start reg-length))
+			(set-mark (point))
+			(goto-char (+ reg-end reg-length))
+			(setq deactivate-mark nil))
+		(let ((line-start (line-beginning-position))
+			  (line-end (line-end-position)))
+			(copy-region-as-kill line-start line-end)
+			(goto-char line-start)
+			(yank)
+			(newline))))
 
 
 (defun my-comment-or-uncomment-region-or-line ()
 	"Comment or uncomment the current line or region, keeping the cursor in place."
 	(interactive)
 	(let ((start (line-beginning-position))
-	(end (line-end-position)))
-	(if (use-region-p)
-	(setq start (save-excursion (goto-char (region-beginning)) (line-beginning-position))
-	end (save-excursion (goto-char (region-end)) (line-end-position))))
-	(save-excursion
-	(comment-or-uncomment-region start end))))
+		  (end (line-end-position)))
+		(if (use-region-p)
+			(setq start (save-excursion (goto-char (region-beginning)) (line-beginning-position))
+				  end (save-excursion (goto-char (region-end)) (line-end-position))))
+		(save-excursion
+		(comment-or-uncomment-region start end))))
 
 
 (defun my-region-active-p ()
@@ -104,31 +103,30 @@
 
 ;; Forward tab
 (defun my-indent-rigidly-right (start end)
-"Indent the region to the right by adding a tab character to each line."
-(interactive "r")
-(if (my-region-active-p)
-(let ((start-marker (copy-marker start t))
-	  (end-marker (copy-marker end t)))
-(save-excursion
-(goto-char start)
-(while (< (point) (marker-position end-marker))
-	(goto-char (line-beginning-position))
-	(unless (looking-at-p "^[[:space:]]*$")
-	   	(insert "\t"))
-	(forward-line 1)
-	;; Update the end marker position
-	(set-marker end-marker (marker-position end-marker))))
-(goto-char start-marker)
-(set-mark (marker-position end-marker))
-(setq deactivate-mark nil)
-;; Clean up markers
-(set-marker start-marker nil)
-(set-marker end-marker nil))
-(insert "\t")))
+	"Indent the region to the right by adding a tab character to each line."
+	(interactive "r")
+	(if (my-region-active-p)
+		(let ((start-marker (copy-marker start t))
+			  (end-marker (copy-marker end t)))
+			(save-excursion
+				(goto-char start)
+				(while (< (point) (marker-position end-marker))
+					(goto-char (line-beginning-position))
+					(unless (looking-at-p "^[[:space:]]*$")
+						(insert "\t"))
+					(forward-line 1)
+					;; Update the end marker position
+					(set-marker end-marker (marker-position end-marker))))
+			(goto-char start-marker)
+			(set-mark (marker-position end-marker))
+			(setq deactivate-mark nil)
+			;; Clean up markers
+			(set-marker start-marker nil)
+			(set-marker end-marker nil))
+		(insert "\t")))
 
 
 ;; Move line/selection up/down:
-
 (defun move-line-up ()
 	"Move the current line or selected lines up."
 	(interactive)
@@ -192,51 +190,66 @@
 
 ;; Search selected text
 (defun isearch-forward-selected ()
-"Search for the selected text using isearch."
-(interactive)
-(if (use-region-p)
-(let ((selection (buffer-substring-no-properties (region-beginning) (region-end))))
-(deactivate-mark)
-(isearch-mode t)
-(isearch-yank-string selection))
-(call-interactively 'isearch-forward)))
+	"Search for the selected text using isearch."
+	(interactive)
+	(if (use-region-p)
+		(let ((selection (buffer-substring-no-properties (region-beginning) (region-end))))
+			(deactivate-mark)
+			(isearch-mode t)
+			(isearch-yank-string selection))
+		(call-interactively 'isearch-forward)))
 
 
 ;; Custom highlighting:
 (defface my-highlight-yellow
-'((t (:background "#FFFF00")))
-"Face for highlighting with yellow background.")
+	'((t (:background "#FFFF00" :foreground "#000000")))
+	"Face for highlighting with yellow background.")
 
 (defface my-highlight-green
-'((t (:background "#00FF00")))
-"Face for highlighting with green background.")
+	'((t (:background "#00FF00" :foreground "#000000")))
+	"Face for highlighting with green background.")
 
 (defface my-highlight-cyan
-'((t (:background "#00FFFF")))
-"Face for highlighting with cyan background.")
+	'((t (:background "#00FFFF" :foreground "#000000")))
+	"Face for highlighting with cyan background.")
 
 (defface my-highlight-magenta
-'((t (:background "#FF00FF")))
-"Face for highlighting with magenta background.")
+	'((t (:background "#FF00FF" :foreground "#000000")))
+	"Face for highlighting with magenta background.")
 
 (defface my-highlight-red
-'((t (:background "#FF0000")))
-"Face for highlighting with red background.")
+	'((t (:background "#FF0000" :foreground "#000000")))
+	"Face for highlighting with red background.")
 
 (defvar my-highlight-colors
-'(my-highlight-yellow my-highlight-green my-highlight-cyan my-highlight-magenta my-highlight-red)
-"List of faces to use for highlighting.")
+	'(my-highlight-yellow my-highlight-green my-highlight-cyan my-highlight-magenta my-highlight-red)
+	"List of faces to use for highlighting.")
 
+;; Highlight on hotkey 
 (defun my-highlight-text (color-index)
-"Highlight all occurrences of the selected text in the buffer with a specified color.
-COLOR-INDEX is the index of the color in `my-highlight-colors`."
-(interactive "nEnter color index (1-5, 0 to unhighlight): ")
-(if (and (use-region-p) (> color-index 0))
-(let ((selection (regexp-quote (buffer-substring-no-properties (region-beginning) (region-end))))
-(face (nth (1- color-index) my-highlight-colors)))
-(highlight-regexp selection face))
-(unhighlight-regexp t)))
+	"Highlight all occurrences of the selected text in the buffer with a specified color.
+	COLOR-INDEX is the index of the color in `my-highlight-colors`."
+	(interactive "nEnter color index (1-5, 0 to unhighlight): ")
+	(if (and (use-region-p) (> color-index 0))
+		(let ((selection (regexp-quote (buffer-substring-no-properties (region-beginning) (region-end))))
+			(face (nth (1- color-index) my-highlight-colors)))
+			(highlight-regexp selection face))
+		(unhighlight-regexp t)))
 
+;; Highlight under cursor
+(defvar my-highlight-regexp nil "The current regexp to highlight.")
+(custom-set-faces '(hi-yellow ((t (:background "#555500" :foreground "#000000")))))
+
+(defun my-highlight-all-occurrences ()
+	"Highlight all occurrences of the word at point."
+	(when my-highlight-regexp
+		(unhighlight-regexp my-highlight-regexp))
+	(let ((word (thing-at-point 'word)))
+		(when word
+			(setq my-highlight-regexp (regexp-quote word))
+			(highlight-regexp my-highlight-regexp 'hi-yellow))))
+
+(add-hook 'post-command-hook 'my-highlight-all-occurrences)
 
 
 ;; My custom minor mode
