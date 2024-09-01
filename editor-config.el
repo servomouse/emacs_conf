@@ -66,39 +66,51 @@
 	"Return t if the region is active and not empty."
 	(and (region-active-p) (> (region-end) (region-beginning))))
 
+(defun my-unindent-line (line-start line-end)
+  "remove white spaces at the beginning of the current line"
+  (if (string-prefix-p "\t" (buffer-substring-no-properties line-start line-end))
+		(progn
+			(goto-char (line-beginning-position))
+			(delete-char 1)
+			1)
+		(let ((counter 0))
+	  		(while (and (< counter tab-width) (string-prefix-p " " (buffer-substring-no-properties line-start line-end)))
+				(progn
+	   				(goto-char (line-beginning-position))
+					(delete-char 1)
+					(setq counter (1+ counter))))
+			counter)))
+
 ;; BackTab
 (defun my-indent-rigidly-left (&optional start end)
 	"Indent the region to the left by removing the first tab character or spaces from each line."
 	(interactive "r")
-	(let* ((start (if (my-region-active-p) (region-beginning) (line-beginning-position)))
-		   (end (if (my-region-active-p) (region-end) (line-end-position)))
-		   (start-marker (copy-marker start t))
-		   (end-marker (copy-marker end t)))
-	(save-excursion
-	(goto-char start)
-	(while (< (point) (marker-position end-marker))
-  		(let ((line-start (line-beginning-position))
-			  (line-end (line-end-position))
-			  (counter tab-width))
-  	   		(if (string-prefix-p "\t" (buffer-substring-no-properties line-start line-end))
-	  			(progn
-					(goto-char (line-beginning-position))
-	    			(delete-char 1))
-  		 		(progn
-		   			(while (and (> counter 0) (string-prefix-p " " (buffer-substring-no-properties line-start line-end)))
-			 			(progn
-			   				(goto-char (line-beginning-position))
-	    					(delete-char 1)
-							(setq counter (1- counter)))))))
-  		(forward-line 1)
-  		;; Update the end marker position
-		(set-marker end-marker (marker-position end-marker))))
-	(goto-char start-marker)
-	(set-mark (marker-position end-marker))
-	(setq deactivate-mark nil)
-	;; Clean up markers
-	(set-marker start-marker nil)
-	(set-marker end-marker nil)))
+	;; (message "Number of deleted chars: %d" (my-unindent-line (line-beginning-position) (line-end-position)))
+	(if (use-region-p)
+		(let ((reg-start (mark))
+			  (reg-end (point))
+			  (end-marker (copy-marker end t)))
+		  	(goto-char start)
+		  	(let ((counter (my-unindent-line (line-beginning-position) (line-end-position))))
+			  	(if (< reg-start reg-end)
+				  	(setq reg-start (- reg-start counter))
+					(setq reg-end (- reg-end counter)))
+				(forward-line 1)
+				(while (< (point) (marker-position end-marker))
+					(progn
+						(setq counter (+ counter (my-unindent-line (line-beginning-position) (line-end-position))))
+						(forward-line 1)))
+				(if (< reg-start reg-end)
+					(setq reg-end (- reg-end counter))
+					(setq reg-start (- reg-start counter)))
+				(goto-char reg-start)
+				(set-mark (point))
+				(goto-char reg-end)
+				(setq deactivate-mark nil)))
+		(let ((point-marker (point))
+			  (counter (my-unindent-line (line-beginning-position) (line-end-position))))
+			(goto-char (1- point-marker))
+			(set-mark (point)))))
 
 
 ;; Forward tab
