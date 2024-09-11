@@ -263,6 +263,21 @@
 
 (add-hook 'post-command-hook 'my-highlight-all-occurrences)
 
+(defun my-save-cursor-location ()
+	"Save the current cursor location."
+	(interactive)
+	(setq (make-local-variable 'my-saved-point) (point))
+	(message "Cursor location saved."))
+
+(defun my-restore-cursor-location ()
+	"Restore the cursor to the saved location."
+	(interactive)
+	(if (boundp 'my-saved-point)
+		(goto-char my-saved-point)
+		(message "No cursor location saved.")))
+
+;; (global-set-key (kbd "C-c s") 'my-save-cursor-location)
+;; (global-set-key (kbd "C-c r") 'my-restore-cursor-location)
 
 ;; My custom minor mode
 (define-minor-mode my-custom-keys-mode
@@ -282,6 +297,8 @@
 	;; (global-set-key (kbd "M-<down>") 'move-line-down)
 	;; (global-set-key (kbd "C-f") 'isearch-forward-selected)
 	;; (global-set-key (kbd "C-c h") 'my-highlight-text)
+	(define-key map (kbd "C-c s") 'my-save-cursor-location)
+	(define-key map (kbd "C-c r") 'my-restore-cursor-locatio)
 	(define-key map (kbd "TAB") 'self-insert-command)
 	(define-key map (kbd "M-w") 'my-copy-and-keep-selection)
 	(define-key map (kbd "C-d") 'duplicate-line)
